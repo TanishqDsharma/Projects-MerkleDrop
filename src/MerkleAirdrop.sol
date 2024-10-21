@@ -10,6 +10,7 @@ contract MerkleAirdrop{
     // This means we can call any functions on any variables of IERC20 types
     using SafeERC20 for IERC20;
     error MerkleAirdrop__InvalidProof();
+    error MerkleAirdrop__AlreadyClaimed();
     
     event Claim(address account, uint256 amount);
 
@@ -17,6 +18,8 @@ contract MerkleAirdrop{
     
     bytes32 private immutable merkleRoot;
     IERC20 private immutable airdropToken;
+
+    mapping(address claimer => bool claimed) private s_hasClaimed; 
 
     constructor(bytes32 _merkleRoot, IERC20 token){
         merkleRoot=_merkleRoot;
@@ -34,10 +37,12 @@ contract MerkleAirdrop{
    
 
     function claim(address account, uint256 amount, bytes32[] calldata merkelProof) external{
-        //Calculate Root : Using the account, amount and hashes (Going to be the leaf nodes)
+        if(s_hasClaimed[account]){
+            revert MerkleAirdrop__AlreadyClaimed();
+        }
+
 
         //Here, we are encoding the account and amount together and then taking hash of them
-
         //Q. Why are we hashing twice and concatenating?
         //A. When we are using Merkle Proofs and Merkle Trees we want to hash it twice and this avoid collisions
         // So, if you have two inputs that produce the same hash then its a problem. So, if we are hashing twice we are avoiding 
@@ -49,7 +54,8 @@ contract MerkleAirdrop{
         if(!MerkleProof.verify(merkelProof,merkleRoot,leaf)){
             revert MerkleAirdrop__InvalidProof();
         }
-
+        
+        s_hasClaimed[account] = true;
         emit Claim(account,amount);
         airdropToken.safeTransfer(account,amount);
 
