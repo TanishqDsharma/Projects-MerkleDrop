@@ -61,6 +61,14 @@ contract MerkleAirdrop{
 
     }
 
+    function getMerkleRoot() external view returns (bytes32){
+        return merkleRoot;
+    }
+
+    function getAirdropToken() external view returns(){
+        return airdropToken;
+    }
+
 
 
 
